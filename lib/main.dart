@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:ersa_apps/views/splashscreen.dart';
+import 'package:flutter/material.dart';
 
 void main() {
   runApp(MyApp());
@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: Splashscreen(title: 'Flutter Demo Home Page'),
     );
   }
 }
