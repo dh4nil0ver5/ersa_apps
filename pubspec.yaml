@@ -27,6 +27,7 @@ dependencies:
   auto_size_text: ^2.1.0
   circular_reveal_animation: ^2.0.0
   google_fonts: ^2.1.0
+  progress_indicators: ^1.0.0
 
 
 dev_dependencies:
