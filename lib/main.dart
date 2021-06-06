@@ -1,5 +1,5 @@
-import 'package:ersa_apps/views/splashscreen.dart';
 import 'package:flutter/material.dart';
+import 'views/Splashscreen.dart';
 
 void main() {
   runApp(MyApp());

@@ -1,133 +1,200 @@
+import 'dart:async';
 import 'dart:io';
-// import 'package:ersa_apps/views/splashscreen.dart';
-import 'package:ersa_apps/views/legalitas.dart';
-import 'package:ersa_apps/views/BottomNavigationTabBarView.dart';
-import 'package:ersa_apps/views/order.dart';
-import 'package:ersa_apps/views/rekaman.dart';
-import 'package:ersa_apps/views/home.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
+import 'package:auto_size_text/auto_size_text.dart';
+import 'package:circular_reveal_animation/circular_reveal_animation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-// import 'package:flutter/services.dart';
+import 'package:flutter/services.dart';
+import 'package:storage/views/HexColor.dart';
+import 'package:storage/views/NavigationScreen.dart';
+import 'package:storage/views/maps.dart';
 
 class Homepage extends StatefulWidget {
-  Homepage({Key key, this.title, this.no_hp}) : super(key: key);
+  Homepage({Key? key, required this.title, required this.nmr_hp})
+      : super(key: key);
 
   final String title;
-  final String no_hp;
+  final String nmr_hp;
 
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  _MyHomepage createState() => _MyHomepage();
 }
 
-class _MyHomePageState extends State<Homepage> {
+class _MyHomepage extends State<Homepage> with SingleTickerProviderStateMixin {
+  final autoSizeGroup = AutoSizeGroup();
+  var _bottomNavIndex = 0; //default index of a first screen
 
-  int _selectedIndex = 0;
+  late AnimationController _animationController;
+  late Animation<double> animation;
+  late CurvedAnimation curve;
 
-  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
-  int _currentIndex = 0;
-  var lastIndex;
+  final iconList = <IconData>[
+    Icons.brightness_5,
+    Icons.brightness_4,
+    Icons.brightness_6,
+    Icons.brightness_7,
+  ];
+
+  final List<String> label = [
+    "Home",
+    "Legalitas",
+    "Order",
+    "Rekaman",
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    final systemTheme = SystemUiOverlayStyle.light.copyWith(
+      systemNavigationBarColor: HexColor('#373A36'),
+      systemNavigationBarIconBrightness: Brightness.light,
+    );
+    SystemChrome.setSystemUIOverlayStyle(systemTheme);
+
+    _animationController = AnimationController(
+      duration: Duration(seconds: 1),
+      vsync: this,
+    );
+    curve = CurvedAnimation(
+      parent: _animationController,
+      curve: Interval(
+        0.5,
+        1.0,
+        curve: Curves.fastOutSlowIn,
+      ),
+    );
+    animation = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(curve);
+
+    Future.delayed(
+      Duration(seconds: 1),
+      () => _animationController.forward(),
+    );
+  }
+
+  Widget bodyFunction() {
+    switch (_bottomNavIndex) {
+      case 0:
+        return NavigationScreen(iconList[_bottomNavIndex], _bottomNavIndex);
+        break;
+      case 1:
+        return Container(color: Colors.blue);
+        break;
+      case 2:
+        return Container(color: Colors.orange);
+        break;
+      default:
+        return Maps();
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-
-    void _onItemTapped(int index) {
-      setState(() {
-        _selectedIndex = index;
-      });
-    }
-
-    void _showMaterialDialog() {
-      showDialog(
-          context: context,
-          builder: (_) => new AlertDialog(
-                title: new Text("Informasi"),
-                content: new Text("Pilih tindakan :"),
-                actions: <Widget>[
-                  FlatButton(
-                    child: Text('Close me!'),
-                    onPressed: () => exit(0),
-                  )
-                ],
+    var titles = widget.title;
+    var nmrhp = widget.nmr_hp;
+    return Theme(
+      data: ThemeData.dark(),
+      child: Scaffold(
+        extendBody: true,
+        appBar: AppBar(
+          leadingWidth: 50,
+          leading: Image.asset(
+            'assets/images/logo.png',
+            width: 80,
+            height: 80,
+          ),
+          title: Container(
+            child: Column(
+              children: [
+                Text(
+                  titles,
+                  style: TextStyle(color: Colors.white),
+                ),
+                Text(
+                  "",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ],
+            ),
+          ),
+          automaticallyImplyLeading: false,
+          backgroundColor: Colors.lightBlueAccent,
+          actions: [
+            Container(
+              padding: EdgeInsets.all(10.0),
+              child: InkWell(
+                child: Icon(
+                  Icons.logout,
+                  color: Colors.white,
+                ),
+                onTap: () => showDialog<String>(
+                  context: context,
+                  builder: (BuildContext context) => AlertDialog(
+                    title: const Text('AlertDialog Title'),
+                    content: const Text('AlertDialog description'),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, 'Cancel'),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => exit(0),
+                        child: const Text('OK'),
+                      ),
+                    ],
+                  ),
+                ),
               ),
+            ),
+          ],
+        ),
+        body: bodyFunction(),
+        // body: NavigationScreen(iconList[_bottomNavIndex], _bottomNavIndex),
+        bottomNavigationBar: AnimatedBottomNavigationBar.builder(
+          itemCount: iconList.length,
+          elevation: 10,
+          tabBuilder: (int index, bool isActive) {
+            final color = isActive ? HexColor('#FFA400') : Colors.white;
+            // final color = isActive ? Colors.black : Colors.grey;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  iconList[index],
+                  size: 24,
+                  color: color,
+                ),
+                const SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: AutoSizeText(
+                    label[index],
+                    maxLines: 1,
+                    style: TextStyle(color: color),
+                    group: autoSizeGroup,
+                  ),
+                )
+              ],
             );
-    }
-
-    getCurrentPage(int index) {
-      if (index == 0) {
-        return Home();
-      } else if (index == 1) {
-        return Legalitas();
-      } else if (index == 2) {
-        return Order();
-      } else if (index == 3) {
-          return Rekaman();
-      } else {}
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          children: <Widget>[Text(widget.title), Text(widget.no_hp)],
-        ), 
-        automaticallyImplyLeading: false,
-        // leading: InkWell(
-        //   child: Icon(Icons.arrow_back),
-        //   onTap: () => exit(0),
-        //   onTap: _showMaterialDialog,
-        // ),
-        actions: <Widget>[
-          InkWell(
-            onTap: () => exit(0),
-            child: Icon(Icons.close_rounded, color: Colors.white,),
-          )
-        ],
+          },
+          backgroundColor: HexColor('#373A36'),
+          activeIndex: _bottomNavIndex,
+          splashColor: HexColor('#FFA400'),
+          notchAndCornersAnimation: animation,
+          splashSpeedInMilliseconds: 300,
+          notchSmoothness: NotchSmoothness.defaultEdge,
+          gapLocation: GapLocation.none,
+          leftCornerRadius: 32,
+          rightCornerRadius: 32,
+          onTap: (index) => setState(() => _bottomNavIndex = index),
+        ),
       ),
-      key: _scaffoldKey,
-      body: Stack(
-        children: <Widget>[
-          getCurrentPage(_currentIndex),
-        ],
-      ),
-      bottomNavigationBar:
-        BottomNavigationTabBarView(_currentIndex, onTabChange: (index) {
-          _currentIndex = index;
-          setState(() {});
-          if (_currentIndex == 3 && _currentIndex == lastIndex) {}
-          lastIndex = index;
-        },
-      ),
-      // floatingActionButton: FloatingActionButton(
-      //   onPressed: _incrementCounter,
-      //   tooltip: 'Increment',
-      //   child: Icon(Icons.home),
-      // ),
-      // bottomNavigationBar: BottomNavigationBar(
-      //   items: const <BottomNavigationBarItem>[
-      //     BottomNavigationBarItem(
-      //       icon: Icon(Icons.home),
-      //       label: 'Legalitas',
-      //     ),
-      //     BottomNavigationBarItem(
-      //       icon: Icon(Icons.business),
-      //       label: 'Order',
-      //     ),
-      //     BottomNavigationBarItem(
-      //       icon: Icon(Icons.school),
-      //       label: 'Rekaman',
-      //     ),
-      //     BottomNavigationBarItem(
-      //       icon: Icon(Icons.settings),
-      //       label: 'Tentang',
-      //     ),
-      //   ],
-      //   currentIndex: _selectedIndex,
-      //   showSelectedLabels: true,
-      //   unselectedLabelStyle: TextStyle(color: Colors.grey[500]),
-      //   unselectedItemColor: Colors.grey,
-      //   selectedItemColor: Colors.black,
-      //   onTap: _onItemTapped,
-      // ),
-      floatingActionButtonLocation:
-        FloatingActionButtonLocation.centerFloat,// This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
