@@ -1,0 +1,63 @@
+
+    var index_ = 1;
+    var size = MediaQuery.of(context).size;
+    return Container(
+      width: size.width,
+      height: size.height * 0.8,
+      child: StreamBuilder<QuerySnapshot>(
+        stream: _usersStream,
+        builder: (BuildContext context,
+            AsyncSnapshot<QuerySnapshot> snapshot) {
+          if (snapshot.hasError) {
+            return Text('Something went wrong');
+          }
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: Text("Loading"));
+          }
+          return new ListView(
+            children: snapshot.data.docs.map((DocumentSnapshot document) {
+              return new ListTile(
+                title: GestureDetector(
+                  child: Container(
+                    width: size.width * 0.9,
+                    child: Column(
+                      children: [
+                        Row(
+                          children: <Widget>[
+                            Container(
+                              child: Row(
+                                children: <Widget>[
+                                  InkWell(
+                                    child: Icon(Icons.arrow_right,
+                                        color: Colors.white),
+                                    onTap: ()=>getChilds(document.id, context),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(
+                              width: 10,
+                            ),
+                            Container(
+                              width: size.width * 0.6,
+                              child: new Text(
+                                "title: " + document.get("nama"),
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          color: Color(0xFFCC0055),
+                          child: _isOpenChild ? SizedBox(height: 10,): this.ChildLists
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          );
+        },
+      ),
+    );

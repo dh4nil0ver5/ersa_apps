@@ -1,0 +1,17 @@
+{ 
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "ersa_apps",
+            "request": "launch",
+            "type": "dart",
+            "args": ["--verbose", "--no-sound-null-safety","--release"]
+        },
+        {
+            "name": "ersa_apps (profile mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        }
+    ]
+}
