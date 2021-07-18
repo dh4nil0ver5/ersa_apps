@@ -17,8 +17,7 @@ class ChildList extends StatefulWidget {
 }
 
 class _ChildListState extends State<ChildList> {
-  int _groupValue = -1;
-
+  TextEditingController nama_menu = TextEditingController();
   final Stream<QuerySnapshot> _usersStream = FirebaseFirestore.instance
       .collection('firestore_ersa')
       .doc("menu")
@@ -27,214 +26,187 @@ class _ChildListState extends State<ChildList> {
 
   var isList = true;
   var isNotice = false;
-  var isAdd = false;
   var getId = "";
+  int _groupValue = -1;
+  int _activeMeterIndex;
 
   void _handleRadioValueChanged(int value) {
     setState(() {
       _groupValue = value;
       isNotice = !isNotice;
-      isAdd = !isAdd;
       if (_groupValue == 0) {
-      } else if (_groupValue == 1) {
         Navigator.push(
           context,
           PageTransition(
             type: PageTransitionType.leftToRight,
-            child: file_picker_demo(userId: getId),
+            child: file_picker_demo(
+              userId: getId,
+              childs: "",
+              cmd: "tambah_baru_per_item",
+            ),
           ),
         );
+        setState(() {
+          isList = !isList;
+        });
       }
     });
   }
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-  int _activeMeterIndex;
-  @override
   Widget build(BuildContext context) {
     var size = MediaQuery.of(context).size;
-    return Container(
-      width: size.width,
-      height: size.height - 100,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.all(Radius.circular(0)),
-        color: Colors.blueAccent,
-      ),
-      child: Expanded(
-        child: Column(
-          mainAxisSize: MainAxisSize.max,
-          children: <Widget>[
-            Visibility(
-              visible: isList,
-              child: AnimatedOpacity(
-                opacity: isList ? 1.0 : 0.0,
-                duration: Duration(milliseconds: 500),
-                child: Flexible(
-                  fit: FlexFit.tight,
-                  flex: 3,
-                  child: StreamBuilder<QuerySnapshot>(
-                    stream: _usersStream,
-                    builder: (BuildContext context,
-                        AsyncSnapshot<QuerySnapshot> snapshot) {
-                      if (snapshot.hasError) {
-                        return Center(
-                          child: Text('Something went wrong'),
-                        );
-                      }
-
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Center(
-                          child: Text("Loading"),
-                        );
-                      }
-                      return
-                        Flex(
-                            direction: Axis.horizontal,
-                            children: [Expanded(
-                        child: new ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: snapshot.data.size,
-                            itemBuilder: (BuildContext context, int i) {
-                              DocumentSnapshot user = snapshot.data.docs[i];
+    var size_top = MediaQuery.of(context).size.height * 0.3;
+    return Column(mainAxisSize: MainAxisSize.max, children: <Widget>[
+      Visibility(
+        visible: isList,
+        child: AnimatedOpacity(
+          opacity: isList ? 1.0 : 0.0,
+          duration: Duration(milliseconds: 500),
+          child: Container(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: _usersStream,
+              builder: (BuildContext context,
+                  AsyncSnapshot<QuerySnapshot> snapshot) {
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text('Something went wrong'),
+                  );
+                }
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(
+                    child: Text("Loading"),
+                  );
+                }
+                return new ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: snapshot.data.size,
+                  itemBuilder: (BuildContext context, int i) {
+                    DocumentSnapshot user = snapshot.data.docs[i];
+                    return Container(
+                      margin: EdgeInsets.all(10),
+                      child: new ExpansionPanelList(
+                        expansionCallback: (int index, bool status) {
+                          setState(() {
+                            _activeMeterIndex =
+                                _activeMeterIndex == i ? null : i;
+                          });
+                        },
+                        children: [
+                          new ExpansionPanel(
+                            isExpanded: _activeMeterIndex == i,
+                            headerBuilder:
+                                (BuildContext context, bool isExpanded) {
                               return Container(
-                                margin: EdgeInsets.all(10),
-                                child: new ExpansionPanelList(
-                                  expansionCallback: (int index, bool status) {
-                                    setState(() {
-                                      _activeMeterIndex =
-                                      _activeMeterIndex == i ? null : i;
-                                    });
-                                  },
-                                  children: [
-                                    new ExpansionPanel(
-                                      isExpanded: _activeMeterIndex == i,
-                                      headerBuilder:
-                                          (BuildContext context, bool isExpanded) {
-                                        return new Container(
-                                          padding:
-                                          const EdgeInsets.only(left: 15.0),
-                                          alignment: Alignment.centerLeft,
-                                          child: Row(
-                                            children: [
-                                              Container(
-                                                margin: EdgeInsets.all(10),
-                                                child:
-                                                new InkWell(
-                                                  onTap: () {
-                                                    setState(() {
-                                                      getId = user.id;
-                                                      isList = !isList;
-                                                      isNotice = !isNotice;
-                                                      _list(user.id, context);
-                                                    });
-                                                  },
-                                                  child: Icon(Icons.add),
-                                                ),
-                                              ),
-                                              new Text(
-                                                user.get("nama"),
-                                              ),
-                                            ],
+                                width: MediaQuery.of(context).size.width * 0.9,
+                                child: new Row(
+                                  children: <Widget>[
+                                    Flexible(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: <Widget>[
+                                          new InkWell(
+                                            onTap: () {
+                                              setState(() {
+                                                getId = user.id;
+                                                isList = !isList;
+                                                isNotice = !isNotice;
+                                                _list(user.id, context);
+                                              });
+                                            },
+                                            child: Icon(Icons.add),
                                           ),
-                                        );
-                                      },
-                                      body: new Container(
-                                        child: _page(i, user.id, context),
+                                        ],
                                       ),
+                                    ),
+                                    new Text(
+                                      user.get("nama"),
                                     ),
                                   ],
                                 ),
                               );
-                            }),
-                      ),],);
-
-                    },
-                  ),
-                ),
-              ),
+                            },
+                            body: new Container(
+                              child: _page(i, user.id, context),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
             ),
-            Visibility(
-              visible: isNotice,
-              child: AnimatedOpacity(
-                opacity: isNotice ? 1.0 : 0.0,
-                duration: Duration(milliseconds: 500),
-                child: Container(
-                  color: Colors.greenAccent,
-                  width: size.width * 0.6,
-                  margin: EdgeInsets.only(top: 100),
-                  padding: EdgeInsets.all(10),
-                  child: Column(
-                    children: <Widget>[
-                      Center(
-                        child: Text(
-                          "Pilihan :",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                          ),
-                        ),
+          ),
+        ),
+      ),
+      Visibility(
+        visible: isNotice,
+        child: AnimatedOpacity(
+          opacity: isNotice ? 1.0 : 0.0,
+          duration: Duration(milliseconds: 500),
+          child: Center(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.orange.shade600,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              width: size.width * 0.6,
+              margin: EdgeInsets.only(top: size_top),
+              padding: EdgeInsets.all(10),
+              child: Column(
+                children: <Widget>[
+                  Center(
+                    child: Text(
+                      "Pilihan :",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
                       ),
-                      Row(
-                        children: [
-                          new Radio(
-                            focusColor: Colors.green,
-                            activeColor: Colors.green,
-                            value: 0,
-                            groupValue: _groupValue,
-                            onChanged: _handleRadioValueChanged,
-                          ),
-                          Text(
-                            "Menu",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold),
-                          ),
-                        ],
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      new Radio(
+                        focusColor: Colors.green,
+                        activeColor: Colors.green,
+                        value: 0,
+                        groupValue: _groupValue,
+                        onChanged: _handleRadioValueChanged,
                       ),
-                      Row(
-                        children: [
-                          new Radio(
-                            focusColor: Colors.green,
-                            activeColor: Colors.green,
-                            value: 1,
-                            groupValue: _groupValue,
-                            onChanged: _handleRadioValueChanged,
-                          ),
-                          Text(
-                            "Content menu",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold),
-                          ),
-                        ],
+                      Text(
+                        "Content menu",
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
-                ),
+                  Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(40),
+                      child: RaisedButton(
+                        child: Text("back"),
+                        onPressed: () {
+                          setState(() {
+                            isList = !isList;
+                            isNotice = !isNotice;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            Visibility(
-              visible: isAdd,
-              child: AnimatedOpacity(
-                opacity: isAdd ? 1.0 : 0.0,
-                duration: Duration(milliseconds: 500),
-                child: Container(
-                  child: isAdd ? _list(getId, context) : Text("isi"),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
-    );
+    ]);
   }
 
   Widget _list(String keys, BuildContext context) {
-    // print("233 " + keys);
+    // print(keys + " 116");
     var size = MediaQuery.of(context).size;
     final Stream<QuerySnapshot> _usersStream = FirebaseFirestore.instance
         .collection('firestore_ersa')
@@ -268,11 +240,9 @@ class _ChildListState extends State<ChildList> {
                       return new ListTile(
                         title: GestureDetector(
                           child: Container(
-                            width: size.width * 0.9,
                             child: Row(
                               children: <Widget>[
                                 Container(
-                                  width: size.width * 0.65,
                                   child: new Text(
                                     "title: " + document.get("nama"),
                                     style: TextStyle(color: Colors.white),
@@ -293,7 +263,6 @@ class _ChildListState extends State<ChildList> {
   }
 
   Widget _page(int page, String keys, BuildContext context) {
-    // return Text("ini ontext $page");
     final Stream<QuerySnapshot> _usersStream_ch = FirebaseFirestore.instance
         .collection('firestore_ersa')
         .doc("menu")
@@ -301,6 +270,8 @@ class _ChildListState extends State<ChildList> {
         .doc(keys)
         .collection("content_menu_data")
         .snapshots();
+    String tex = keys;
+    String getIdChild;
     var size = MediaQuery.of(context).size;
     return Container(
       width: size.width,
@@ -318,40 +289,65 @@ class _ChildListState extends State<ChildList> {
             child: new ListView(
               shrinkWrap: true,
               children: snapshot.data.docs.map((DocumentSnapshot document) {
-                return new ListTile(
-                  title: GestureDetector(
-                    child: Container(
-                      width: size.width - widget.size_head,
-                      child: Row(
+                String nama = document.get("nama").toString();
+                getIdChild = document.id;
+                return Container(
+                  margin: EdgeInsets.all(10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Flexible(
+                        child: RichText(
+                          overflow: TextOverflow.ellipsis,
+                          strutStyle: StrutStyle(fontSize: 12.0),
+                          text: TextSpan(
+                              style: TextStyle(color: Colors.black),
+                              text: nama),
+                        ),
+                      ),
+                      Row(
                         children: <Widget>[
-                          Container(
-                            width: size.width * 0.66,
-                            padding: EdgeInsets.all(10),
-                            child: Flexible(
-                              child: RichText(
-                                overflow: TextOverflow.ellipsis,
-                                strutStyle: StrutStyle(fontSize: 12.0),
-                                text: TextSpan(
-                                    style: TextStyle(color: Colors.black),
-                                    text: "title: " + document.get("nama")),
+                          InkWell(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.blueAccent,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                Icons.edit,
+                                color: Colors.white,
                               ),
                             ),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                PageTransition(
+                                  type: PageTransitionType.leftToRight,
+                                  child: file_picker_demo(
+                                      userId: keys,
+                                      childs: getIdChild,
+                                      cmd: "ubah_per_item"),
+                                ),
+                              );
+                            },
                           ),
-                          Row(
-                            children: <Widget>[
-                              Icon(
-                                Icons.edit,
+                          InkWell(
+                            child: Container(
+                              decoration: BoxDecoration(
                                 color: Colors.blueAccent,
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                              Icon(
-                                Icons.delete,
-                                color: Colors.blueAccent,
+                              child: Icon(
+                                Icons.remove_circle,
+                                color: Colors.white,
                               ),
-                            ],
-                          )
+                            ),
+                            onTap: () =>
+                                showAlertDialog(context, tex, getIdChild),
+                          ),
                         ],
-                      ),
-                    ),
+                      )
+                    ],
                   ),
                 );
               }).toList(),
@@ -360,5 +356,44 @@ class _ChildListState extends State<ChildList> {
         },
       ),
     );
+  }
+
+  void showAlertDialog(BuildContext context, String parent, String text) {
+    print(text);
+    Widget okButton = FlatButton(
+      child: Text("OK"),
+      onPressed: () => hapus(context, parent, text),
+    );
+
+    // set up the AlertDialog
+    AlertDialog alert = AlertDialog(
+      title: Text("Notifikasi"),
+      content: Text("data dihapus ?"),
+      actions: [
+        okButton,
+      ],
+    );
+
+    // show the dialog
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return alert;
+      },
+    );
+  }
+
+  hapus(BuildContext context, String parent, String text) {
+    Navigator.of(context, rootNavigator: true).pop('dialog');
+    FirebaseFirestore.instance
+        .collection("firestore_ersa")
+        .doc("menu")
+        .collection("data")
+        .doc(parent)
+        .collection("content_menu_data")
+        .doc(text)
+        .delete()
+        .then((value) => {print('oke')})
+        .catchError((error) => {print('error')});
   }
 }

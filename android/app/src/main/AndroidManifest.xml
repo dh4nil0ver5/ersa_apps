@@ -4,8 +4,8 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
    <application
         android:name="androidx.multidex.MultiDexApplication"
-        android:label="ersa_apps"
-        android:icon="@mipmap/ic_launcher">
+        android:label="ersa tools"
+        android:icon="@drawable/logo">
         <activity
             android:name=".MainActivity"
             android:launchMode="singleTop"

@@ -1,4 +1,5 @@
 import 'package:ersa_apps/ui/pages/ListPage.dart';
+import 'package:ersa_apps/ui/pages/utility_bills_page.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
@@ -21,10 +22,12 @@ enum UploadType {
 }
 
 class file_picker_demo extends StatefulWidget {
-
   final String userId;
+  final String cmd;
+  final String childs;
 
-  const file_picker_demo({Key key, this.userId}) : super(key: key);
+  const file_picker_demo({Key key, this.childs, this.userId, this.cmd})
+      : super(key: key);
 
   @override
   _MyAppState createState() => new _MyAppState();
@@ -77,6 +80,8 @@ class _MyAppState extends State<file_picker_demo> {
         .doc(widget.userId)
         .collection("content_menu_data");
 
+    print(widget.userId);
+
     UploadTask uploadTask;
     if (_pickingType != FileType.custom || _hasValidMime || result != null) {
       try {
@@ -90,20 +95,19 @@ class _MyAppState extends State<file_picker_demo> {
           uploadTask = ref.putFile(file, metadata);
           uploadTask.snapshotEvents.listen(
               (firebase_storage.TaskSnapshot snapshot) {
-                setState(() {
-                  size = snapshot.totalBytes;
-                  isTransferred = snapshot.bytesTransferred;
-                  _hasTxt =
+            setState(() {
+              size = snapshot.totalBytes;
+              isTransferred = snapshot.bytesTransferred;
+              _hasTxt =
                   'Progress: ${((isTransferred / size) * 100).toStringAsFixed(2)} %';
-                });
-          },onError: (e) {
+            });
+          }, onError: (e) {
             if (e.code == 'permission-denied') {
               print(
                   'User does not have permission to upload to this reference.');
             }
           });
           _path = file.uri.path;
-
         }
       } on PlatformException catch (e) {
         print("Unsupported operation" + e.toString());
@@ -113,18 +117,30 @@ class _MyAppState extends State<file_picker_demo> {
 
       _fileName = _path != null ? _path.split('/').last : '...';
 
-      uploadTask.whenComplete(() async{
+      uploadTask.whenComplete(() async {
         String files = "";
-        try{
+        try {
           files = await ref.getDownloadURL();
 
-          users.add({
-            'link': files, // John Doe
-            'nama': _fileName, // Stokes and Sons
-            'size_data': size // 42
-          });
-          print(files);
-        }catch(onError){
+          if (widget.cmd == "tambah_baru_per_item") {
+            users.add({
+              'link': files, // John Doe
+              'nama': _fileName, // Stokes and Sons
+              'size_data': size // 42
+            });
+          } else if (widget.cmd == "ubah_per_item") {
+            users
+                .doc(widget.childs)
+                .update({
+                  'link': files, // John Doe
+                  'nama': _fileName, // Stokes and Sons
+                  'size_data': size
+                })
+                .then((value) => print("User Updated"))
+                .catchError((error) => print("Failed to update user: $error"));
+          }
+          // SystemNavigator.pop();
+        } catch (onError) {
           print("Error");
         }
       });
@@ -154,9 +170,9 @@ class _MyAppState extends State<file_picker_demo> {
                       setState(() {
                         _hasFinish = !_hasFinish;
                       });
-    setState(() {
-    _openFileExplorer();
-    });
+                      setState(() {
+                        _openFileExplorer();
+                      });
                     },
                     child: new Text("Open file picker"),
                   ),
@@ -174,14 +190,26 @@ class _MyAppState extends State<file_picker_demo> {
                   child: Center(
                     child: Container(
                       alignment: Alignment.center,
-                      padding: EdgeInsets.only(top: 25),
+                      padding: EdgeInsets.only(top: 100),
                       width: size.width,
                       child: Column(
                         children: [
                           new CircularProgressIndicator(),
-                          new Text(_hasTxt, style: TextStyle(color: Colors.black)),
+                          new Text(_hasTxt,
+                              style: TextStyle(color: Colors.black)),
                         ],
                       ),
+                    ),
+                  ),
+                ),
+                Center(
+                  child: Container(
+                    alignment: Alignment.center,
+                    padding: EdgeInsets.only(top: 100),
+                    width: size.width,
+                    child: Text(
+                      " Tekan tanda < pada perangkat anda, untuk kembali ke halaman sebelumnya",
+                      textAlign: TextAlign.center,
                     ),
                   ),
                 ),

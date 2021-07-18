@@ -27,6 +27,7 @@ class MessagesPage extends StatelessWidget with NavigationStates {
         .doc('menu')
         .collection("data");
     TextEditingController nama_menu = TextEditingController();
+    TextEditingController nama_menu_ubah = TextEditingController();
     Future<void> addUser() {
       return users
           .add({
@@ -45,184 +46,215 @@ class MessagesPage extends StatelessWidget with NavigationStates {
           .catchError((error) => print('Delete failed: $error'));
     }
 
-    Future<void> updateUser(String id) {
+    Future<void> updateUser(String id, String nama_update) {
       return users
           .doc(id)
-          .update({'nama': "mencoba"})
+          .update({'nama': nama_update})
           .then((value) => print("User Updated"))
           .catchError((error) => print("Failed to update user: $error"));
       ;
     }
 
-    void formUpdate(String id) {}
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.all(Radius.circular(0)),
-        color: Colors.redAccent,
-      ),
-      padding: const EdgeInsets.only(left: 16, right: 16, top: 48),
-      child: Stack(
-        children: <Widget>[
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                mainAxisSize: MainAxisSize.max,
-                children: [
-                  InkWell(
-                    child: Icon(Icons.menu, color: Colors.white),
-                    onTap: onMenuTap,
-                  ),
-                  Text("Menu",
-                      style: TextStyle(fontSize: 24, color: Colors.white)),
-                  Icon(Icons.settings, color: Colors.transparent),
-                ],
-              ),
-              SizedBox(height: 10),
-              Container(
-                width: size.width,
-                height: size.height * 0.8,
-                child: StreamBuilder<QuerySnapshot>(
-                  stream: _usersStream,
-                  builder: (BuildContext context,
-                      AsyncSnapshot<QuerySnapshot> snapshot) {
-                    if (snapshot.hasError) {
-                      return Text('Something went wrong');
-                    }
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: Text("Loading"));
-                    }
+    void showAlertDialog(BuildContext context) {
+      FirebaseFirestore.instance
+          .collection("firestore_ersa")
+          .doc("menu")
+          .collection("data");
+      Widget okButton = FlatButton(
+        child: Text("OK"),
+        onPressed: () => {},
+      );
 
-                    return Container(
-                      child: new ListView(
-                        children:
-                            snapshot.data.docs.map((DocumentSnapshot document) {
-                          return new ListTile(
-                            title: GestureDetector(
-                              child: Container(
-                                width: size.width * 0.9,
+      // set up the AlertDialog
+      AlertDialog alert = AlertDialog(
+        title: Text("Notifikasi"),
+        content: Text("data dihapus ?"),
+        actions: [
+          okButton,
+        ],
+      );
+
+      // show the dialog
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return alert;
+        },
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        leading: InkWell(
+          child: Icon(Icons.menu, color: Colors.white),
+          onTap: onMenuTap,
+        ),
+        title: Center(
+          child: Text(
+            "Menu",
+            style: TextStyle(fontSize: 24, color: Colors.white),
+          ),
+        ),
+        actions: <Widget>[
+          Container(
+            margin: EdgeInsets.only(right: 30),
+            child: InkWell(
+              child: Icon(Icons.add, color: Colors.white),
+              onTap: () async {
+                bool result = await showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: Text('Masukkan jenis layanan'),
+                      content: TextFormField(
+                        controller: nama_menu,
+                      ),
+                      actions: <Widget>[
+                        new FlatButton(
+                          onPressed: () {
+                            Navigator.of(context, rootNavigator: true).pop(
+                                false); // dismisses only the dialog and returns false
+                          },
+                          child: Text('Batal'),
+                        ),
+                        FlatButton(
+                          onPressed: () {
+                            addUser();
+                            Navigator.of(context, rootNavigator: true).pop(
+                                true); // dismisses only the dialog and returns true
+                          },
+                          child: Text('Simpan'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+        backgroundColor: Colors.redAccent,
+        elevation: 0,
+      ),
+      /* drawer: Drawer(
+          child: AppDrawer(),
+        ),*/
+      body: SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(),
+          child: Container(
+            color: Colors.redAccent,
+            width: size.width,
+            height: size.height,
+            child: StreamBuilder<QuerySnapshot>(
+              stream: _usersStream,
+              builder: (BuildContext context,
+                  AsyncSnapshot<QuerySnapshot> snapshot) {
+                if (snapshot.hasError) {
+                  return Center(child: Text('Something went wrong'));
+                }
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: Text("Loading"));
+                }
+
+                return new ListView(
+                  children: snapshot.data.docs.map((DocumentSnapshot document) {
+                    return new ListTile(
+                      title: GestureDetector(
+                        child: Container(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.max,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: <Widget>[
+                              Container(
+                                child: new Text(
+                                  "title: " + document.get("nama"),
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                              Container(
                                 child: Row(
                                   children: <Widget>[
                                     Container(
-                                      width: size.width * 0.65,
-                                      child: new Text(
-                                        "title: " + document.get("nama"),
-                                        style: TextStyle(color: Colors.white),
+                                      margin: EdgeInsets.only(right: 10),
+                                      child: InkWell(
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                          child: Icon(Icons.edit,
+                                              color: Colors.redAccent),
+                                        ),
+                                        onTap: () async {
+                                          bool result = await showDialog(
+                                            context: context,
+                                            builder: (context) {
+                                              return AlertDialog(
+                                                title: Text('Edit : '),
+                                                content: TextFormField(
+                                                  controller: nama_menu_ubah,
+                                                ),
+                                                actions: <Widget>[
+                                                  new FlatButton(
+                                                    onPressed: () {
+                                                      Navigator.of(context,
+                                                              rootNavigator:
+                                                                  true)
+                                                          .pop(
+                                                              false); // dismisses only the dialog and returns false
+                                                    },
+                                                    child: Text('Batal'),
+                                                  ),
+                                                  FlatButton(
+                                                    onPressed: () {
+                                                      updateUser(document.id,
+                                                          nama_menu_ubah.text);
+                                                      Navigator.of(context,
+                                                              rootNavigator:
+                                                                  true)
+                                                          .pop(
+                                                              true); // dismisses only the dialog and returns true
+                                                    },
+                                                    child: Text('Simpan'),
+                                                  ),
+                                                ],
+                                              );
+                                            },
+                                          );
+                                        },
                                       ),
                                     ),
                                     Container(
-                                      width: size.width * 0.15,
-                                      child: Row(
-                                        children: <Widget>[
-                                          InkWell(
-                                            child: Icon(Icons.edit,
-                                                color: Colors.white),
-                                            onTap: () async {
-                                              bool result = await showDialog(
-                                                context: context,
-                                                builder: (context) {
-                                                  return AlertDialog(
-                                                    title: Text(
-                                                        'Masukkan jenis layanan'),
-                                                    content: TextFormField(
-                                                      controller: nama_menu,
-                                                    ),
-                                                    actions: <Widget>[
-                                                      new FlatButton(
-                                                        onPressed: () {
-                                                          Navigator.of(context,
-                                                                  rootNavigator:
-                                                                      true)
-                                                              .pop(
-                                                                  false); // dismisses only the dialog and returns false
-                                                        },
-                                                        child: Text('Batal'),
-                                                      ),
-                                                      FlatButton(
-                                                        onPressed: () {
-                                                          addUser();
-                                                          Navigator.of(context,
-                                                                  rootNavigator:
-                                                                      true)
-                                                              .pop(
-                                                                  true); // dismisses only the dialog and returns true
-                                                        },
-                                                        child: Text('Simpan'),
-                                                      ),
-                                                    ],
-                                                  );
-                                                },
-                                              );
-                                            },
+                                      child: InkWell(
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius:
+                                                BorderRadius.circular(10),
                                           ),
-                                          InkWell(
-                                            child: Icon(Icons.delete,
-                                                color: Colors.white),
-                                            onTap: () =>
-                                                deleteUser(document.id),
-                                          ),
-                                        ],
+                                          child: Icon(Icons.delete,
+                                              color: Colors.redAccent),
+                                        ),
+                                        onTap: () => deleteUser(document.id),
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                            ),
-                          );
-                        }).toList(),
+                            ],
+                          ),
+                        ),
                       ),
                     );
-                  },
-                ),
-              ),
-            ],
-          ),
-          Container(
-            margin: EdgeInsets.only(bottom: 10.0),
-            child: Align(
-              alignment: Alignment.bottomRight,
-              child: FloatingActionButton(
-                heroTag: "btn2",
-                backgroundColor: Color(0XFF0D325E),
-                child: Icon(Icons.add),
-                onPressed: () async {
-                  bool result = await showDialog(
-                    context: context,
-                    builder: (context) {
-                      return AlertDialog(
-                        title: Text('Masukkan jenis layanan'),
-                        content: TextFormField(
-                          controller: nama_menu,
-                        ),
-                        actions: <Widget>[
-                          new FlatButton(
-                            onPressed: () {
-                              Navigator.of(context, rootNavigator: true).pop(
-                                  false); // dismisses only the dialog and returns false
-                            },
-                            child: Text('Batal'),
-                          ),
-                          FlatButton(
-                            onPressed: () {
-                              addUser();
-                              Navigator.of(context, rootNavigator: true).pop(
-                                  true); // dismisses only the dialog and returns true
-                            },
-                            child: Text('Simpan'),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-
-                  if (result) {
-                  } else {}
-                },
-              ),
+                  }).toList(),
+                );
+              },
             ),
           ),
-        ],
+        ),
       ),
     );
   }
